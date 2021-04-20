@@ -65,6 +65,7 @@ export interface IRunMetadataDict {
   processId?: number;
   initFailed?: boolean;
   globalMarkers: IMarker[];
+  hasLogCaptureEvents?: boolean;
   steps: {
     [stepKey: string]: IStepMetadata;
   };
@@ -96,6 +97,7 @@ export function extractMetadataFromLogs(
     mostRecentLogAt: 0,
     globalMarkers: [],
     steps: {},
+    hasLogCaptureEvents: false,
   };
 
   // Returns the most recent marker with the given `key` without an end time

@@ -596,9 +596,6 @@ const RESUME_BACKFILL_MUTATION = gql`
       ... on ResumeBackfillSuccess {
         backfillId
       }
-      ... on ReadOnlyError {
-        message
-      }
       ... on PythonError {
         message
       }
