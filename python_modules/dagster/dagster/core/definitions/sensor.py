@@ -1,16 +1,17 @@
 import inspect
+from collections import namedtuple
 from contextlib import ExitStack
 from typing import Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
+from dagster.core.definitions.events import AssetKey
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_fn_warning
 
-from .mode import DEFAULT_MODE_NAME
+
 from .run_request import JobType, RunRequest, SkipReason
 from .utils import check_valid_name
 
@@ -39,6 +40,7 @@ class SensorExecutionContext:
         "_cursor",
         "_exit_stack",
         "_instance",
+        "_source_run_ids",
     ]
 
     def __init__(
@@ -59,6 +61,7 @@ class SensorExecutionContext:
         self._cursor = check.opt_str_param(cursor, "cursor")
 
         self._instance = None
+        self._source_run_ids = []
 
     def __enter__(self):
         return self
@@ -93,6 +96,10 @@ class SensorExecutionContext:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
+    @property
+    def source_run_ids(self):
+        return self._source_run_ids
+
     def update_cursor(self, cursor: Optional[str]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
@@ -104,6 +111,9 @@ class SensorExecutionContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+
+    def add_source_run_id(self, run_id):
+        self._source_run_ids.append(check.str_param(run_id, "run_id"))
 
 
 class SensorDefinition:
@@ -215,7 +225,9 @@ class SensorDefinition:
             run_requests = result
             skip_message = None
 
-        return SensorExecutionData(run_requests, skip_message, context.cursor)
+        return SensorExecutionData(
+            run_requests, skip_message, context.cursor, context.source_run_ids
+        )
 
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
@@ -230,6 +242,7 @@ class SensorExecutionData(
             ("run_requests", Optional[List[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
+            ("source_run_ids", Optional[List[str]]),
         ],
     )
 ):
@@ -238,10 +251,12 @@ class SensorExecutionData(
         run_requests: Optional[List[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
+        source_run_ids: Optional[List[str]] = None,
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
+        check.opt_list_param(source_run_ids, "source_run_ids", of_type=str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -250,6 +265,7 @@ class SensorExecutionData(
             run_requests=run_requests,
             skip_message=skip_message,
             cursor=cursor,
+            source_run_ids=source_run_ids,
         )
 
 
@@ -303,3 +319,52 @@ def build_sensor_context(
         last_run_key=None,
         cursor=cursor,
     )
+
+
+class AssetSensorDefinition(SensorDefinition):
+    def __init__(
+        self,
+        name,
+        asset_key,
+        pipeline_name,
+        asset_materialization_fn,
+        solid_selection=None,
+        mode=None,
+        minimum_interval_seconds=None,
+        description=None,
+    ):
+        self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+
+        def _wrap_asset_fn(materialization_fn):
+            def _fn(context):
+                events = context.instance.events_for_asset_key(
+                    self._asset_key, after_cursor=context.cursor, ascending=False, limit=1
+                )
+                if not events:
+                    return
+
+                record_id, event = events[0]
+                yield from materialization_fn(context, event)
+                context.update_cursor(str(record_id))
+
+            return _fn
+
+        super(AssetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, "solid_selection", of_type=str
+            ),
+            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
+            minimum_interval_seconds=check.opt_int_param(
+                minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
+            ),
+            description=check.opt_str_param(description, "description"),
+        )
+
+    @property
+    def asset_key(self):
+        return self._asset_key

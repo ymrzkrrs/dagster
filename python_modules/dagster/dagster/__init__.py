@@ -51,6 +51,7 @@ from dagster.core.definitions import (
     TypeCheck,
     UrlMetadataEntryData,
     build_init_logger_context,
+    asset_sensor,
     composite_solid,
     daily_schedule,
     default_executors,
@@ -219,6 +220,7 @@ __all__ = [
     "make_values_resource",
     "RetryPolicy",
     # Decorators
+    "asset_sensor",
     "composite_solid",
     "executor",
     "intermediate_storage",

@@ -1,6 +1,6 @@
 import os
 
-from dagster import AssetKey, RunRequest, SkipReason, check, sensor
+from dagster import AssetKey, RunRequest, SkipReason, check, sensor, asset_sensor
 
 
 def get_directory_files(directory_name, since=None):
@@ -104,5 +104,25 @@ def get_toys_sensors():
                     "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
+
+    @asset_sensor(asset_keys=[AssetKey("model")], pipeline_name="log_asset_pipeline")
+    def toy_asset_sensor(context, asset_events):
+        if not asset_events:
+            return
+
+        record_id, event = asset_events[0]
+
+        context.update_cursor(str(record_id))
+        yield RunRequest(
+            run_key=str(record_id),
+            run_config={
+                "solids": {
+                    "read_materialization": {
+                        "config": {"asset_key": ["model"], "pipeline": event.pipeline_name}
+                    }
+                }
+            },
+        )
+        context.update_cursor(str(record_id))
 
     return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor]

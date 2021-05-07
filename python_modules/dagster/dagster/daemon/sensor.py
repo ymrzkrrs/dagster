@@ -312,6 +312,16 @@ def _evaluate_sensor(
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
+            if external_sensor.is_asset_sensor and sensor_runtime_data.source_run_ids:
+                for run_id in sensor_runtime_data.source_run_ids:
+                    pipeline_run = instance.get_run_by_id(run_id)
+                    instance.report_engine_event(
+                        (
+                            f"Created downstream pipeline run {run.run_id} from asset sensor "
+                            f"{external_sensor.name} ({external_sensor.asset_keys})"
+                        ),
+                        pipeline_run,
+                    )
             instance.submit_run(run.run_id, external_pipeline)
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(
