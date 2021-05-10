@@ -56,30 +56,30 @@ def get_toys_sensors():
                 },
             )
 
-    @sensor(pipeline_name="log_asset_pipeline")
-    def toy_asset_sensor(context):
-        events = context.instance.events_for_asset_key(
-            AssetKey(["model"]), after_cursor=context.cursor, ascending=False, limit=1
-        )
+    # @sensor(pipeline_name="log_asset_pipeline")
+    # def toy_asset_sensor(context):
+    #     events = context.instance.events_for_asset_key(
+    #         AssetKey(["model"]), after_cursor=context.cursor, ascending=False, limit=1
+    #     )
 
-        if not events:
-            return
+    #     if not events:
+    #         return
 
-        record_id, event = events[0]  # take the most recent materialization
-        from_pipeline = event.pipeline_name
+    #     record_id, event = events[0]  # take the most recent materialization
+    #     from_pipeline = event.pipeline_name
 
-        yield RunRequest(
-            run_key=str(record_id),
-            run_config={
-                "solids": {
-                    "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": from_pipeline}
-                    }
-                }
-            },
-        )
+    #     yield RunRequest(
+    #         run_key=str(record_id),
+    #         run_config={
+    #             "solids": {
+    #                 "read_materialization": {
+    #                     "config": {"asset_key": ["model"], "pipeline": from_pipeline}
+    #                 }
+    #             }
+    #         },
+    #     )
 
-        context.update_cursor(str(record_id))
+    #     context.update_cursor(str(record_id))
 
     bucket = os.environ.get("DAGSTER_TOY_SENSOR_S3_BUCKET")
 
@@ -105,24 +105,17 @@ def get_toys_sensors():
                 },
             )
 
-    @asset_sensor(asset_keys=[AssetKey("model")], pipeline_name="log_asset_pipeline")
-    def toy_asset_sensor(context, asset_events):
-        if not asset_events:
-            return
-
-        record_id, event = asset_events[0]
-
-        context.update_cursor(str(record_id))
+    @asset_sensor(asset_key=AssetKey("model"), pipeline_name="log_asset_pipeline")
+    def toy_asset_sensor(context, asset_event):
         yield RunRequest(
-            run_key=str(record_id),
+            run_key=context.cursor,
             run_config={
                 "solids": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": event.pipeline_name}
+                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
                     }
                 }
             },
         )
-        context.update_cursor(str(record_id))
 
     return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor]
