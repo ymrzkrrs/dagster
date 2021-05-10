@@ -313,15 +313,25 @@ def _evaluate_sensor(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
             if external_sensor.is_asset_sensor and sensor_runtime_data.source_run_ids:
+                from dagster.core.definitions.event_metadata import EventMetadataEntry
+                from dagster.core.events import EngineEventData
+
                 for run_id in sensor_runtime_data.source_run_ids:
                     pipeline_run = instance.get_run_by_id(run_id)
                     instance.report_engine_event(
-                        (
-                            f"Created downstream pipeline run {run.run_id} from asset sensor "
-                            f"{external_sensor.name} ({external_sensor.asset_keys})"
-                        ),
+                        f"Created downstream pipeline run from asset sensor {external_sensor.name}",
                         pipeline_run,
+                        EngineEventData(
+                            [
+                                EventMetadataEntry.pipeline_run(run.run_id, "Downstream pipeline"),
+                                *[
+                                    EventMetadataEntry.asset(asset_key, "Triggered asset")
+                                    for asset_key in external_sensor.asset_keys
+                                ],
+                            ]
+                        ),
                     )
+
             instance.submit_run(run.run_id, external_pipeline)
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(

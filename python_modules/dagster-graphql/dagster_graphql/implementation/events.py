@@ -13,6 +13,8 @@ from dagster.core.definitions.event_metadata import (
     PythonArtifactMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
+    DagsterAssetMetadataEntryData,
+    DagsterPipelineRunMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord

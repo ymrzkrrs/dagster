@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         "FloatMetadataEntryData",
         "IntMetadataEntryData",
         "PythonArtifactMetadataEntryData",
+        "DagsterAssetMetadataEntryData",
+        "DagsterPipelineRunMetadataEntryData",
         str,
         float,
         int,
