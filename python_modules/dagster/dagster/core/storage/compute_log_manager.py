@@ -240,6 +240,14 @@ class ComputeLogSubscription:
                 self.complete()
 
     @property
+    def namespace(self):
+        return self._namespace
+
+    @property
+    def log_key(self):
+        return self._log_key
+
+    @property
     def run_id(self):
         # for backcompat for child implementations that are accessing these properties directly
         return self._namespace
