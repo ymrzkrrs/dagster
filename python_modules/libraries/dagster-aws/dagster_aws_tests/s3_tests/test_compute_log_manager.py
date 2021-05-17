@@ -1,4 +1,5 @@
 import os
+import pytest
 import sys
 import tempfile
 
@@ -11,6 +12,7 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster_aws.s3 import S3ComputeLogManager
+from dagster_tests.core_tests.storage_tests.utils.compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -111,3 +113,19 @@ compute_logs:
         == mock_s3_bucket.name
     )
     assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access
+
+
+class TestLocalComputeLogManager(TestComputeLogManager):
+    __test__ = True
+
+    @pytest.fixture(scope="function", name="compute_log_manager_config")
+    def compute_log_manager_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir_path:
+            yield {
+                "module": "dagster_aws.s3.compute_log_manager",
+                "class": "S3ComputeLogManager",
+                "config": {
+                    "bucket": "foo_bucket",
+                    "local_dir": tmpdir_path,
+                },
+            }
