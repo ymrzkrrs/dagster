@@ -9,6 +9,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.serdes import whitelist_for_serdes
 
 from .dep_snapshot import (
@@ -72,6 +73,7 @@ def build_output_def_snap(output_def):
         description=output_def.description,
         is_required=output_def.is_required,
         is_dynamic=output_def.is_dynamic,
+        asset_key=output_def.get_asset_key(None) if output_def.is_static_asset else None,
     )
 
 
@@ -288,9 +290,13 @@ class InputDefSnap(namedtuple("_InputDefSnap", "name dagster_type_key descriptio
 
 @whitelist_for_serdes
 class OutputDefSnap(
-    namedtuple("_OutputDefSnap", "name dagster_type_key description is_required is_dynamic")
+    namedtuple(
+        "_OutputDefSnap", "name dagster_type_key description is_required is_dynamic asset_key"
+    )
 ):
-    def __new__(cls, name, dagster_type_key, description, is_required, is_dynamic=False):
+    def __new__(
+        cls, name, dagster_type_key, description, is_required, is_dynamic=False, asset_key=None
+    ):
         return super(OutputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -298,6 +304,7 @@ class OutputDefSnap(
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
         )
 
 
