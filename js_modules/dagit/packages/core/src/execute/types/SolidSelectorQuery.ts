@@ -44,9 +44,15 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs {
   dependsOn: SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs_dependsOn[];
 }
 
+export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: SolidSelectorQuery_pipelineOrError_Pipeline_solids_outputs_definition_assetKey | null;
 }
 
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_outputs_dependedBy_solid {

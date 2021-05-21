@@ -42,9 +42,15 @@ export interface SolidNodeInvocationFragment_inputs {
   dependsOn: SolidNodeInvocationFragment_inputs_dependsOn[];
 }
 
+export interface SolidNodeInvocationFragment_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SolidNodeInvocationFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: SolidNodeInvocationFragment_outputs_definition_assetKey | null;
 }
 
 export interface SolidNodeInvocationFragment_outputs_dependedBy_solid {

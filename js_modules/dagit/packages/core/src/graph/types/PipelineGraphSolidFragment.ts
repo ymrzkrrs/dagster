@@ -42,9 +42,15 @@ export interface PipelineGraphSolidFragment_inputs {
   dependsOn: PipelineGraphSolidFragment_inputs_dependsOn[];
 }
 
+export interface PipelineGraphSolidFragment_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineGraphSolidFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: PipelineGraphSolidFragment_outputs_definition_assetKey | null;
 }
 
 export interface PipelineGraphSolidFragment_outputs_dependedBy_solid {

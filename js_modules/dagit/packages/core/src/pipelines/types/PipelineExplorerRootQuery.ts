@@ -750,9 +750,15 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   dependsOn: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_inputs_dependsOn[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_outputs_definition_assetKey | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_outputs_dependedBy_solid {
@@ -976,9 +982,15 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   dependsOn: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_dependsOn[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition_assetKey | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_dependedBy_solid {

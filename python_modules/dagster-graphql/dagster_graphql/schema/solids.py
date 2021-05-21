@@ -8,6 +8,7 @@ from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .metadata import GrapheneMetadataItemDefinition
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
 
 
 class _ArgNotPresentSentinel:
@@ -53,6 +54,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
     description = graphene.String()
     is_dynamic = graphene.Boolean()
     type = graphene.NonNull(GrapheneDagsterType)
+    assetKey = graphene.Field(GrapheneAssetKey)
 
     class Meta:
         name = "OutputDefinition"
@@ -81,6 +83,13 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_solid_definition(self, _graphene_info):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+
+    def resolve_assetKey(self, _graphene_info):
+        return (
+            GrapheneAssetKey(self._output_def_snap.asset_key)
+            if self._output_def_snap.asset_key
+            else None
+        )
 
 
 class GrapheneInput(graphene.ObjectType):

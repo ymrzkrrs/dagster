@@ -214,9 +214,15 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   definition: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_dependedBy_definition;
 }
 
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_definition_assetKey | null;
 }
 
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs {

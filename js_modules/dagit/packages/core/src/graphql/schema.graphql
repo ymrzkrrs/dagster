@@ -125,6 +125,7 @@ type OutputDefinition {
   description: String
   isDynamic: Boolean
   type: DagsterType!
+  assetKey: AssetKey
 }
 
 interface DagsterType {
@@ -147,6 +148,10 @@ interface ConfigType {
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isSelector: Boolean!
+}
+
+type AssetKey {
+  path: [String!]!
 }
 
 type ConfigTypeField {
@@ -355,10 +360,6 @@ interface DisplayableEvent {
 interface EventMetadataEntry {
   label: String!
   description: String
-}
-
-type AssetKey {
-  path: [String!]!
 }
 
 type ExpectationResult implements DisplayableEvent {

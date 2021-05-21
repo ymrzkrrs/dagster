@@ -42,9 +42,15 @@ export interface PipelineExplorerSolidHandleFragment_solid_inputs {
   dependsOn: PipelineExplorerSolidHandleFragment_solid_inputs_dependsOn[];
 }
 
+export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerSolidHandleFragment_solid_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
+  assetKey: PipelineExplorerSolidHandleFragment_solid_outputs_definition_assetKey | null;
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_outputs_dependedBy_solid {

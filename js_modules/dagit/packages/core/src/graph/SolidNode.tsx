@@ -278,6 +278,9 @@ export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
     outputs {
       definition {
         name
+        assetKey {
+          path
+        }
       }
       dependedBy {
         solid {
