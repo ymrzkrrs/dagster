@@ -56,31 +56,6 @@ def get_toys_sensors():
                 },
             )
 
-    # @sensor(pipeline_name="log_asset_pipeline")
-    # def toy_asset_sensor(context):
-    #     events = context.instance.events_for_asset_key(
-    #         AssetKey(["model"]), after_cursor=context.cursor, ascending=False, limit=1
-    #     )
-
-    #     if not events:
-    #         return
-
-    #     record_id, event = events[0]  # take the most recent materialization
-    #     from_pipeline = event.pipeline_name
-
-    #     yield RunRequest(
-    #         run_key=str(record_id),
-    #         run_config={
-    #             "solids": {
-    #                 "read_materialization": {
-    #                     "config": {"asset_key": ["model"], "pipeline": from_pipeline}
-    #                 }
-    #             }
-    #         },
-    #     )
-
-    #     context.update_cursor(str(record_id))
-
     bucket = os.environ.get("DAGSTER_TOY_SENSOR_S3_BUCKET")
 
     from dagster_aws.s3.sensor import get_s3_keys

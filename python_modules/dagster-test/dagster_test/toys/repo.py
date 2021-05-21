@@ -1,5 +1,12 @@
 import pendulum
-from dagster import repository, pipeline, solid, AssetMaterialization, Output
+from dagster import (
+    repository,
+    pipeline,
+    solid,
+    Output,
+    AssetKey,
+    OutputDefinition,
+)
 from dagster_test.toys.asset_lineage import asset_lineage_partition_set, asset_lineage_pipeline
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
@@ -20,11 +27,10 @@ from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
 
-@solid
+@solid(output_defs=[OutputDefinition(name="myoutput", asset_key=AssetKey("model"))])
 def materialization_solid(_):
     timestamp = pendulum.now("UTC").timestamp()
-    yield AssetMaterialization(asset_key="model", metadata={"timestamp": timestamp})
-    yield Output(1)
+    yield Output(1, metadata={"timestamp": timestamp})
 
 
 @pipeline
