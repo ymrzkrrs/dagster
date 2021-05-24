@@ -95,12 +95,18 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   description: string | null;
 }
 
+export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type;
   description: string | null;
   isDynamic: boolean | null;
+  assetKey: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions_assetKey | null;
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
@@ -486,12 +492,18 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   description: string | null;
 }
 
+export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
   description: string | null;
   isDynamic: boolean | null;
+  assetKey: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_assetKey | null;
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {

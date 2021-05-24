@@ -86,7 +86,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_assetKey(self, _graphene_info):
         return (
-            GrapheneAssetKey(self._output_def_snap.asset_key)
+            GrapheneAssetKey(path=self._output_def_snap.asset_key.path)
             if self._output_def_snap.asset_key
             else None
         )

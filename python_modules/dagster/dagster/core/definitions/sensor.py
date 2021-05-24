@@ -1,5 +1,4 @@
 import inspect
-from collections import namedtuple
 from contextlib import ExitStack
 from typing import Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
@@ -11,6 +10,7 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_fn_warning
 
+from .mode import DEFAULT_MODE_NAME
 
 from .run_request import JobType, RunRequest, SkipReason
 from .utils import check_valid_name

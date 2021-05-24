@@ -716,6 +716,11 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   loggers: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_inputs_definition {
   __typename: "InputDefinition";
   name: string;
@@ -1186,6 +1191,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   name: string;
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
+  assetKeys: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_assetKeys[];
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;
   solidHandles: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }

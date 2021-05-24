@@ -34,6 +34,15 @@ def build_solid_definitions_snapshot(pipeline_def):
     )
 
 
+def build_pipeline_asset_keys(pipeline_def):
+    asset_keys = []
+    for solid_def in pipeline_def.all_solid_defs:
+        for output_def in solid_def.output_defs:
+            if output_def.is_static_asset:
+                asset_keys.append(output_def.get_asset_key(None))
+    return asset_keys
+
+
 @whitelist_for_serdes
 class SolidDefinitionsSnapshot(
     namedtuple("_SolidDefinitionsSnapshot", "solid_def_snaps composite_solid_def_snaps")

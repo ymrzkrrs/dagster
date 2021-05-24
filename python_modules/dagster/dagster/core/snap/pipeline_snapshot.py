@@ -33,7 +33,9 @@ from .solid import (
     SolidDefSnap,
     SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
+    build_pipeline_asset_keys,
 )
+from ..events import AssetKey
 
 
 def create_pipeline_snapshot_id(snapshot):
@@ -47,7 +49,7 @@ class PipelineSnapshot(
         "_PipelineSnapshot",
         "name description tags "
         "config_schema_snapshot dagster_type_namespace_snapshot solid_definitions_snapshot "
-        "dep_structure_snapshot mode_def_snaps lineage_snapshot",
+        "dep_structure_snapshot mode_def_snaps lineage_snapshot asset_keys",
     )
 ):
     def __new__(
@@ -61,6 +63,7 @@ class PipelineSnapshot(
         dep_structure_snapshot,
         mode_def_snaps,
         lineage_snapshot=None,
+        asset_keys=None,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -85,6 +88,7 @@ class PipelineSnapshot(
             lineage_snapshot=check.opt_inst_param(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
+            asset_keys=check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey),
         )
 
     @classmethod
@@ -115,6 +119,7 @@ class PipelineSnapshot(
                 for md in pipeline_def.mode_definitions
             ],
             lineage_snapshot=lineage,
+            asset_keys=build_pipeline_asset_keys(pipeline_def),
         )
 
     def get_solid_def_snap(self, solid_def_name):

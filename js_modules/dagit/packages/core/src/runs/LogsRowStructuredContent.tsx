@@ -1,16 +1,16 @@
 import {Colors, Intent, Tag} from '@blueprintjs/core';
-import qs from 'qs';
 import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {AssetLink} from '../assets/AssetLink';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 
 import {EventTypeColumn} from './LogsRowComponents';
-import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
+import {LogRowStructuredContentTable, MetadataEntries} from './MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {
   LogsRowStructuredFragment,
@@ -352,17 +352,6 @@ const MaterializationContent: React.FC<{
     );
   }
 
-  const asOf = qs.stringify({asOf: timestamp});
-  const to = `/instance/assets/${materialization.assetKey.path
-    .map(encodeURIComponent)
-    .join('/')}?${asOf}`;
-
-  const assetDashboardLink = (
-    <span style={{marginLeft: 10}}>
-      [<MetadataEntryLink to={to}>View Asset</MetadataEntryLink>]
-    </span>
-  );
-
   return (
     <DefaultContent message={message} eventType={eventType}>
       <>
@@ -370,12 +359,7 @@ const MaterializationContent: React.FC<{
           rows={[
             {
               label: 'asset_key',
-              item: (
-                <>
-                  {materialization.assetKey.path.join(' > ')}
-                  {assetDashboardLink}
-                </>
-              ),
+              item: <AssetLink assetKey={materialization.assetKey} asOfTimestamp={timestamp} />,
             },
           ]}
           styles={{paddingBottom: 0}}

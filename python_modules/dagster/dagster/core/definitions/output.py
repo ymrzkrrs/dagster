@@ -142,7 +142,7 @@ class OutputDefinition:
 
     @property
     def is_asset(self):
-        return self._asset_key_fn or self._asset_key
+        return bool(self._asset_key_fn or self._asset_key)
 
     @property
     def is_static_asset(self):

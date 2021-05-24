@@ -41,12 +41,18 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   description: string | null;
 }
 
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
   isDynamic: boolean | null;
   type: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions_type;
   description: string | null;
+  assetKey: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions_assetKey | null;
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -432,12 +438,18 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   description: string | null;
 }
 
+export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
   isDynamic: boolean | null;
   type: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_type;
   description: string | null;
+  assetKey: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_assetKey | null;
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_inputMappings_definition {

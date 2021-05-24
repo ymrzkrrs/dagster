@@ -710,9 +710,15 @@ export interface PipelineExplorerFragment_modes {
   loggers: PipelineExplorerFragment_modes_loggers[];
 }
 
+export interface PipelineExplorerFragment_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: PipelineExplorerFragment_modes[];
+  assetKeys: PipelineExplorerFragment_assetKeys[];
 }

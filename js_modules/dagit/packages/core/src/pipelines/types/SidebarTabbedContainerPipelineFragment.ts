@@ -710,9 +710,15 @@ export interface SidebarTabbedContainerPipelineFragment_modes {
   loggers: SidebarTabbedContainerPipelineFragment_modes_loggers[];
 }
 
+export interface SidebarTabbedContainerPipelineFragment_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SidebarTabbedContainerPipelineFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: SidebarTabbedContainerPipelineFragment_modes[];
+  assetKeys: SidebarTabbedContainerPipelineFragment_assetKeys[];
 }

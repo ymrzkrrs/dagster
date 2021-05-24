@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {breakOnUnderscores} from '../app/Util';
+import {AssetLink} from '../assets/AssetLink';
 import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -120,19 +121,22 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
         ))}
       </SidebarSection>
       <SidebarSection title={'Outputs'}>
-        {definition.outputDefinitions.map((outputDef, idx) => (
-          <SectionItemContainer key={idx}>
-            <SectionSmallHeader>
-              {breakOnUnderscores(outputDef.name)}
-              {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
-            </SectionSmallHeader>
-            <TypeWrapper>
-              <TypeWithTooltip type={outputDef.type} />
-            </TypeWrapper>
-            <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
-            <Description description={outputDef.description} />
-          </SectionItemContainer>
-        ))}
+        {definition.outputDefinitions.map((outputDef, idx) => {
+          return (
+            <SectionItemContainer key={idx}>
+              <SectionSmallHeader>
+                {breakOnUnderscores(outputDef.name)}
+                {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
+              </SectionSmallHeader>
+              <TypeWrapper>
+                <TypeWithTooltip type={outputDef.type} />
+              </TypeWrapper>
+              {outputDef.assetKey ? <AssetLink assetKey={outputDef.assetKey} /> : null}
+              <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <Description description={outputDef.description} />
+            </SectionItemContainer>
+          );
+        })}
       </SidebarSection>
       {getInvocations && (
         <SidebarSection title={'All Invocations'}>
@@ -162,6 +166,9 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       isDynamic
       type {
         ...DagsterTypeWithTooltipFragment
+      }
+      assetKey {
+        path
       }
     }
     inputDefinitions {

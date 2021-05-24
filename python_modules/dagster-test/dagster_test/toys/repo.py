@@ -30,7 +30,7 @@ from .sensors import get_toys_sensors
 @solid(output_defs=[OutputDefinition(name="myoutput", asset_key=AssetKey("model"))])
 def materialization_solid(_):
     timestamp = pendulum.now("UTC").timestamp()
-    yield Output(1, metadata={"timestamp": timestamp})
+    yield Output(1, metadata={"timestamp": timestamp}, output_name="myoutput")
 
 
 @pipeline

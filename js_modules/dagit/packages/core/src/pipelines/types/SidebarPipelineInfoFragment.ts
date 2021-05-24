@@ -710,9 +710,15 @@ export interface SidebarPipelineInfoFragment_modes {
   loggers: SidebarPipelineInfoFragment_modes_loggers[];
 }
 
+export interface SidebarPipelineInfoFragment_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface SidebarPipelineInfoFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: SidebarPipelineInfoFragment_modes[];
+  assetKeys: SidebarPipelineInfoFragment_assetKeys[];
 }
