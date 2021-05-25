@@ -1,5 +1,5 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 from dagster import check
 from dagster.core.definitions.run_request import JobType
@@ -54,6 +54,10 @@ class ExternalRepository:
             (external_partition_set_data.name, external_partition_set_data)
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
+        self._asset_sources = defaultdict(list)
+        for external_pipeline_data in external_repository_data.external_pipeline_datas:
+            for asset_key in external_pipeline_data.pipeline_snapshot.asset_keys:
+                self._asset_sources[asset_key].append(external_pipeline_data.pipeline_snapshot.name)
 
     @property
     def name(self):
@@ -124,6 +128,9 @@ class ExternalRepository:
 
     def get_all_external_pipelines(self):
         return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
+
+    def get_asset_sources(self, asset_key):
+        return self._asset_sources[asset_key]
 
     @property
     def handle(self):

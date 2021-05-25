@@ -75,66 +75,6 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
         return self._event.dagster_event.step_materialization_data.materialization.partition
 
 
-class GrapheneAsset(graphene.ObjectType):
-    id = graphene.NonNull(graphene.String)
-    key = graphene.NonNull(GrapheneAssetKey)
-    assetMaterializations = graphene.Field(
-        non_null_list(GrapheneAssetMaterialization),
-        partitions=graphene.List(graphene.String),
-        beforeTimestampMillis=graphene.String(),
-        limit=graphene.Int(),
-    )
-    tags = non_null_list(GrapheneAssetTag)
-
-    class Meta:
-        name = "Asset"
-
-    def __init__(self, key, tags=None):
-        super().__init__(key=key)
-        check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-        self._tags = tags
-
-    def resolve_id(self, _):
-        return self.key
-
-    def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ...implementation.fetch_assets import get_asset_events
-
-        try:
-            before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
-                else None
-            )
-        except ValueError:
-            before_timestamp = None
-
-        return [
-            GrapheneAssetMaterialization(event=event)
-            for event in get_asset_events(
-                graphene_info,
-                self.key,
-                kwargs.get("partitions"),
-                before_timestamp=before_timestamp,
-                limit=kwargs.get("limit"),
-            )
-        ]
-
-    def resolve_tags(self, graphene_info):
-        from ...implementation.fetch_assets import get_asset_events
-
-        if self._tags is not None:
-            tags = self._tags
-        else:
-            events = get_asset_events(graphene_info, self.key, limit=1)
-            tags = (
-                events[0].dagster_event.step_materialization_data.materialization.tags or {}
-                if events
-                else {}
-            )
-        return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
-
-
 class GraphenePipelineRun(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
@@ -162,7 +102,7 @@ class GraphenePipelineRun(graphene.ObjectType):
     rootRunId = graphene.Field(graphene.String)
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
-    assets = non_null_list(GrapheneAsset)
+    assets = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneAsset")
 
     class Meta:
         name = "PipelineRun"
@@ -547,3 +487,72 @@ class GraphenePipelineRunOrError(graphene.Union):
     class Meta:
         types = (GraphenePipelineRun, GraphenePipelineRunNotFoundError, GraphenePythonError)
         name = "PipelineRunOrError"
+
+
+class GrapheneAsset(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    key = graphene.NonNull(GrapheneAssetKey)
+    assetMaterializations = graphene.Field(
+        non_null_list(GrapheneAssetMaterialization),
+        partitions=graphene.List(graphene.String),
+        beforeTimestampMillis=graphene.String(),
+        limit=graphene.Int(),
+    )
+    tags = non_null_list(GrapheneAssetTag)
+    sourcePipelines = non_null_list(GraphenePipeline)
+
+    class Meta:
+        name = "Asset"
+
+    def __init__(self, key, tags=None):
+        super().__init__(key=key)
+        check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        self._tags = tags
+
+    def resolve_id(self, _):
+        return self.key
+
+    def resolve_assetMaterializations(self, graphene_info, **kwargs):
+        from ...implementation.fetch_assets import get_asset_events
+
+        try:
+            before_timestamp = (
+                int(kwargs.get("beforeTimestampMillis")) / 1000.0
+                if kwargs.get("beforeTimestampMillis")
+                else None
+            )
+        except ValueError:
+            before_timestamp = None
+
+        return [
+            GrapheneAssetMaterialization(event=event)
+            for event in get_asset_events(
+                graphene_info,
+                self.key,
+                kwargs.get("partitions"),
+                before_timestamp=before_timestamp,
+                limit=kwargs.get("limit"),
+            )
+        ]
+
+    def resolve_tags(self, graphene_info):
+        from ...implementation.fetch_assets import get_asset_events
+
+        if self._tags is not None:
+            tags = self._tags
+        else:
+            events = get_asset_events(graphene_info, self.key, limit=1)
+            tags = (
+                events[0].dagster_event.step_materialization_data.materialization.tags or {}
+                if events
+                else {}
+            )
+        return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
+
+    def resolve_sourcePipelines(self, graphene_info):
+        pipelines = []
+        for location in graphene_info.context.repository_locations:
+            for repository in location.get_repositories().values():
+                for pipeline_name in repository.get_asset_sources(self.key):
+                    pipelines.append(repository.get_full_external_pipeline(pipeline_name))
+        return [GraphenePipeline(pipeline) for pipeline in pipelines]

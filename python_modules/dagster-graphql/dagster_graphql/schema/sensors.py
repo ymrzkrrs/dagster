@@ -27,6 +27,8 @@ class GrapheneSensor(graphene.ObjectType):
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
     nextTick = graphene.Field(GrapheneFutureJobTick)
+    isAssetSensor = graphene.Boolean()
+    assets = graphene.List("dagster_graphql.schema.pipelines.pipeline.GrapheneAsset")
 
     class Meta:
         name = "Sensor"
@@ -62,6 +64,13 @@ class GrapheneSensor(graphene.ObjectType):
 
     def resolve_nextTick(self, graphene_info):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
+
+    def resolve_assets(self, _graphene_info):
+        from .pipelines.pipeline import GrapheneAsset
+
+        if not self._external_sensor.is_asset_sensor:
+            return None
+        return [GrapheneAsset(key=asset_key) for asset_key in self._external_sensor.asset_keys]
 
 
 class GrapheneSensorOrError(graphene.Union):

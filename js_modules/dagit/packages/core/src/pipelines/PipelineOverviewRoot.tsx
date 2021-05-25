@@ -420,6 +420,12 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           nextTick {
             timestamp
           }
+          isAssetSensor
+          assets {
+            sourcePipelines {
+              name
+            }
+          }
         }
       }
       ... on PipelineNotFoundError {
