@@ -422,6 +422,7 @@ type Asset {
   key: AssetKey!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   tags: [AssetTag!]!
+  sourcePipelines: [Pipeline!]!
 }
 
 type AssetMaterialization {
@@ -683,6 +684,8 @@ type Sensor {
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureJobTick
+  isAssetSensor: Boolean
+  assets: [Asset]
 }
 
 type PipelinePreset {

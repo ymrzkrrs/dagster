@@ -10,6 +10,87 @@ import { PipelineSelector, PipelineRunStatus, JobStatus } from "./../../types/gl
 // GraphQL query operation: PipelineOverviewQuery
 // ====================================================
 
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PipelineSnapshotNotFoundError" | "PythonError";
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules_scheduleState_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  pipelineName: string;
+  status: PipelineRunStatus;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules_scheduleState {
+  __typename: "JobState";
+  id: string;
+  status: JobStatus;
+  runs: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules_scheduleState_runs[];
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+  scheduleState: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules_scheduleState;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_sensorState_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  pipelineName: string;
+  status: PipelineRunStatus;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_sensorState {
+  __typename: "JobState";
+  id: string;
+  status: JobStatus;
+  runs: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_sensorState_runs[];
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_assets_sourcePipelines {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_assets {
+  __typename: "Asset";
+  id: string;
+  sourcePipelines: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_assets_sourcePipelines[];
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  sensorState: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_sensorState;
+  isAssetSensor: boolean | null;
+  assets: (PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors_assets | null)[] | null;
+}
+
+export interface PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
+  id: string;
+  name: string;
+  description: string | null;
+  runs: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_runs[];
+  schedules: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_schedules[];
+  sensors: PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot_sensors[];
+}
+
+export type PipelineOverviewQuery_pipelineAssetGraphSnapshot = PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineNotFoundError | PipelineOverviewQuery_pipelineAssetGraphSnapshot_PipelineSnapshot;
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_definition {
   __typename: "InputDefinition";
   name: string;
@@ -406,12 +487,26 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   timestamp: number;
 }
 
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_assets_sourcePipelines {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_assets {
+  __typename: "Asset";
+  id: string;
+  sourcePipelines: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_assets_sourcePipelines[];
+}
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
   sensorState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState;
   nextTick: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_nextTick | null;
+  isAssetSensor: boolean | null;
+  assets: (PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_assets | null)[] | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot {
@@ -443,6 +538,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PythonError {
 export type PipelineOverviewQuery_pipelineSnapshotOrError = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineOverviewQuery_pipelineSnapshotOrError_PythonError;
 
 export interface PipelineOverviewQuery {
+  pipelineAssetGraphSnapshot: PipelineOverviewQuery_pipelineAssetGraphSnapshot;
   pipelineSnapshotOrError: PipelineOverviewQuery_pipelineSnapshotOrError;
 }
 

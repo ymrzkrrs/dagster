@@ -28,6 +28,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {PipelineAssetGraph, PIPELINE_ASSET_GRAPH_FRAGMENT} from './PipelineAssetGraph';
 import {explorerPathFromString} from './PipelinePathUtils';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
 import {
@@ -35,7 +36,6 @@ import {
   PipelineOverviewQueryVariables,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
 } from './types/PipelineOverviewQuery';
-
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 
 type Props = RouteComponentProps<{pipelinePath: string}> & {repoAddress: RepoAddress};
@@ -68,7 +68,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult}>
-      {({pipelineSnapshotOrError}) => {
+      {({pipelineSnapshotOrError, pipelineAssetGraphSnapshot}) => {
         if (pipelineSnapshotOrError.__typename === 'PipelineSnapshotNotFoundError') {
           return (
             <NonIdealState
@@ -96,7 +96,6 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
             />
           );
         }
-
         const solids = pipelineSnapshotOrError.solidHandles.map((handle) => handle.solid);
         const schedules = pipelineSnapshotOrError.schedules;
         const sensors = pipelineSnapshotOrError.sensors;
@@ -114,7 +113,12 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                     boxShadow: `0 1px 1px rgba(0, 0, 0, 0.2)`,
                   }}
                 >
-                  <PipelineGraph
+                  {pipelineAssetGraphSnapshot.__typename === 'PipelineSnapshot' ? (
+                    <PipelineAssetGraph pipeline={pipelineAssetGraphSnapshot} />
+                  ) : (
+                    <div>FOO</div>
+                  )}
+                  {/* <PipelineGraph
                     pipelineName={pipelineName}
                     backgroundColor={Colors.LIGHT_GRAY5}
                     solids={solids}
@@ -122,8 +126,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                     interactor={SVGViewport.Interactors.None}
                     focusSolids={[]}
                     highlightedSolids={[]}
-                  />
-                  <div
+                  /> */}
+                  {/* <div
                     style={{
                       display: 'flex',
                       justifyContent: 'flex-end',
@@ -133,7 +137,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                     <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
                       Explore Pipeline Definition &gt;
                     </Link>
-                  </div>
+                  </div> */}
                 </div>
               </OverviewSection>
               <OverviewSection title="Description">
@@ -375,6 +379,11 @@ const OVERVIEW_JOB_FRAGMENT = gql`
 
 const PIPELINE_OVERVIEW_QUERY = gql`
   query PipelineOverviewQuery($pipelineSelector: PipelineSelector!, $limit: Int!) {
+    pipelineAssetGraphSnapshot: pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
+      ... on PipelineSnapshot {
+        ...PipelineAssetGraphPipelineFragment
+      }
+    }
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
         id
@@ -422,7 +431,9 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           }
           isAssetSensor
           assets {
+            id
             sourcePipelines {
+              id
               name
             }
           }
@@ -443,4 +454,5 @@ const PIPELINE_OVERVIEW_QUERY = gql`
   ${OVERVIEW_JOB_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
   ${RUN_ACTION_MENU_FRAGMENT}
+  ${PIPELINE_ASSET_GRAPH_FRAGMENT}
 `;
