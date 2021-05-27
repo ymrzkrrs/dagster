@@ -10,6 +10,7 @@ import {LayoutContext} from './LayoutProvider';
 const FeatureFlagsRoot = React.lazy(() => import('./FeatureFlagsRoot'));
 const InstanceRoot = React.lazy(() => import('../instance/InstanceRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
+const PoopRoot = React.lazy(() => import('../PoopRoot'));
 
 const ContentRoot = React.memo(() => (
   <React.Suspense fallback={<div />}>
@@ -17,6 +18,7 @@ const ContentRoot = React.memo(() => (
       <Route path="/flags" component={FeatureFlagsRoot} />
       <Route path="/instance" component={InstanceRoot} />
       <Route path="/workspace" component={WorkspaceRoot} />
+      <Route path="/poop" component={PoopRoot} />
       <Route path="*" component={FallthroughRoot} />
     </Switch>
   </React.Suspense>

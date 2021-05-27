@@ -54,6 +54,7 @@ class GrapheneSensor(graphene.ObjectType):
             mode=external_sensor.mode,
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
+            isAssetSensor=external_sensor.is_asset_sensor,
         )
 
     def resolve_id(self, _):

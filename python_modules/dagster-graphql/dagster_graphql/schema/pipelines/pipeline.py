@@ -244,6 +244,10 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     assetKeys = non_null_list(GrapheneAssetKey)
+    historicalAssetKeys = graphene.Field(
+        non_null_list(GrapheneAssetKey),
+        lastRunCount=graphene.Argument(graphene.NonNull(graphene.Int)),
+    )
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -373,6 +377,23 @@ class GrapheneIPipelineSnapshotMixin:
             GrapheneAssetKey(path=asset_key.path)
             for asset_key in self.get_represented_pipeline().pipeline_snapshot.asset_keys
         ]
+
+    def resolve_historicalAssetKeys(self, graphene_info, **kwargs):
+        limit = kwargs.get("lastRunCount")
+        runs_filter = PipelineRunsFilter(
+            pipeline_name=self.get_represented_pipeline().name, statuses=[PipelineRunStatus.SUCCESS]
+        )
+        runs = graphene_info.context.instance.get_runs(filters=runs_filter, limit=limit)
+        asset_keys = set()
+        for run in runs:
+            records = graphene_info.context.instance.all_logs(run.run_id)
+            asset_keys.update(
+                record.dagster_event.asset_key
+                for record in records
+                if record.is_dagster_event and record.dagster_event.asset_key
+            )
+
+        return [GrapheneAssetKey(path=asset_key.path) for asset_key in asset_keys]
 
 
 class GrapheneIPipelineSnapshot(graphene.Interface):

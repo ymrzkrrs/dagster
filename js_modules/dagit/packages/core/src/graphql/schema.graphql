@@ -75,6 +75,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  historicalAssetKeys(lastRunCount: Int!): [AssetKey!]!
   presets: [PipelinePreset!]!
 }
 
@@ -775,6 +776,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  historicalAssetKeys(lastRunCount: Int!): [AssetKey!]!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
