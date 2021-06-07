@@ -21,8 +21,9 @@ def cli():
 
 
 @cli.command()
-def list():  # pylint: disable=redefined-builtin
-    for image in list_images():
+@click.option("--directory", required=False, help="The directory that contains image definitions.")
+def list(directory):  # pylint: disable=redefined-builtin
+    for image in list_images(images_path=directory):
         print(image.image)  # pylint: disable=print-call
 
 
