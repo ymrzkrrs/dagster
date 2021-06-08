@@ -43,8 +43,9 @@ def list(directory):  # pylint: disable=redefined-builtin
     help="Timestamp to build in format 2020-07-11T040642 (defaults to now UTC)",
 )
 @click.option("-v", "--python-version", type=click.STRING, required=True)
-def build(name, dagster_version, timestamp, python_version):
-    get_image(name).build(timestamp, dagster_version, python_version)
+@click.option("--directory", required=False, help="The directory that contains image definitions.")
+def build(name, dagster_version, timestamp, python_version, directory):
+    get_image(name, images_path=directory).build(timestamp, dagster_version, python_version)
 
 
 @cli.command()
