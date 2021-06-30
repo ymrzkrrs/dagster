@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name, protected-access, unused-argument
+# pylint: disable=redefined-outer-name, unused-argument
 import warnings
 
 import boto3

@@ -1,3 +1,6 @@
+# pylint: disable=protected-access
+
+
 def test_default_launcher(
     ecs, build_instance, pipeline, external_pipeline, subnet, network_interface, image, environment
 ):
