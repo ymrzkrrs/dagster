@@ -17,6 +17,7 @@ from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
 from .util import non_null_list
+from .asset_graph import GrapheneAssetDefinition
 
 
 class GrapheneLocationStateChangeEventType(graphene.Enum):
@@ -153,6 +154,7 @@ class GrapheneRepository(graphene.ObjectType):
     partitionSets = non_null_list(GraphenePartitionSet)
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
+    assetDefinitions = non_null_list(GrapheneAssetDefinition)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
 
     class Meta:
@@ -217,6 +219,12 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneRepositoryMetadata(key=key, value=value)
             for key, value in metadata.items()
             if value is not None
+        ]
+
+    def resolve_assetDefinitions(self, _graphene_info):
+        return [
+            GrapheneAssetDefinition(self._repository, external_asset_def)
+            for external_asset_def in self._repository.get_external_asset_definitions()
         ]
 
 
