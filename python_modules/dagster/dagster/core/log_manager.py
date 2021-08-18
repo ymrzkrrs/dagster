@@ -154,8 +154,10 @@ class PythonLogCaptureHandler(logging.Handler):
         super().__init__(level=level)
 
     def _extract_extra(self, record: logging.LogRecord) -> Dict[str, Any]:
-        # hacky way to figure out which attributes were added into the record object (i.e. were
-        # members of the extra dictionary)
+        # In the logging.Logger log() implementation, the elements of the `extra` dictionary
+        # argument are smashed into the __dict__ of the underlying logging.LogRecord.
+        # This function figures out what the original `extra` values of the log call were by
+        # comparing the set of attributes in the received record to those of a default record.
         ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + ["message", "asctime"]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
