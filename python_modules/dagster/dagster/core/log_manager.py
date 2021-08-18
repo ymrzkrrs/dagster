@@ -149,29 +149,64 @@ def construct_log_string(
 
 
 class PythonLogCaptureHandler(logging.Handler):
-    def __init__(self, level: int, log_manager: DagsterLogManager):
+    def __init__(self, level: int, log_manager: "DagsterLogManager"):
         self._log_manager = log_manager
         super().__init__(level=level)
 
+    def _extract_extra(self, record: logging.LogRecord) -> Dict[str, Any]:
+        # hacky way to figure out which attributes were added into the record object (i.e. were
+        # members of the extra dictionary)
+        ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + ["message", "asctime"]
+        return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
+
     def emit(self, record: logging.LogRecord):
+        # avoid processing record that already have dagster meta
+        if getattr(record, DAGSTER_META_KEY, None) is not None:
+            return
         dagster_record = self._log_manager.convert_record(record)
+        # built-in handlers
         for handler in self._log_manager.handlers:
             handler.handle(dagster_record)
+        # user-defined loggers
+        for logger in self._log_manager.loggers:
+            # change the name of the logger to match the original sender (hack)
+            _name = logger.name
+            logger.name = record.name
+            logger.log(
+                level=dagster_record.levelno,
+                msg=dagster_record.msg,
+                exc_info=dagster_record.exc_info,
+                extra=self._extract_extra(record),
+            )
+            logger.name = _name
 
 
 class DagsterLogManager(logging.Logger):
+<<<<<<< HEAD
     def __init__(
         self,
         logging_metadata: DagsterLoggingMetadata,
         loggers: List[logging.Logger],
         handlers: Optional[List[logging.Handler]] = None,
     ):
+=======
+    def __init__(self, logging_metadata: DagsterLoggingMetadata, loggers: List[logging.Logger]):
+        import sys
+
+>>>>>>> working python log capture
         self._logging_metadata = check.inst_param(
             logging_metadata, "logging_metadata", DagsterLoggingMetadata
         )
         self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
+<<<<<<< HEAD
 
+=======
+        self._python_capture_handler = PythonLogCaptureHandler(
+            level=logging.CRITICAL, log_manager=self
+        )
+>>>>>>> working python log capture
         super().__init__(name="dagster", level=logging.DEBUG)
+        self.addHandler(logging.StreamHandler(sys.stdout))
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
         for handler in handlers:
@@ -185,10 +220,14 @@ class DagsterLogManager(logging.Logger):
     def loggers(self) -> List[logging.Logger]:
         return self._loggers
 
-    def begin_capture(self):
+    def begin_python_log_capture(self):
         # for now, automatically (and only) attach to root logger
         root_logger = logging.getLogger()
-        root_logger.addHandler()
+        root_logger.addHandler(self._python_capture_handler)
+
+    def end_python_log_capture(self):
+        root_logger = logging.getLogger()
+        root_logger.removeHandler(self._python_capture_handler)
 
     def log_dagster_event(self, level: int, msg: str, dagster_event: "DagsterEvent"):
         self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
@@ -230,19 +269,18 @@ class DagsterLogManager(logging.Logger):
         self, level, msg, args, exc_info=None, extra=None, stack_info=False
     ):  # pylint: disable=arguments-differ
 
+        extra = extra or {}
+
         # log_dagster_event() puts the DagsterEvent in the extra field
         dagster_message_props = DagsterMessageProps(
             orig_message=msg, dagster_event=extra.get(DAGSTER_META_KEY)
         )
 
         # we stash dagster meta information in the extra field
-        extra = extra or {}
         extra[DAGSTER_META_KEY] = self._get_dagster_meta_dict(dagster_message_props)
 
         # convert the message to our preferred format
         msg = construct_log_string(self.logging_metadata, dagster_message_props)
-
-        extra[DAGSTER_META_KEY] = meta_dict
 
         for logger in self._loggers:
             logger.log(level, msg, *args, exc_info=exc_info, extra=extra, stack_info=stack_info)
