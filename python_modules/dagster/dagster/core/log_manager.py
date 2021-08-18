@@ -191,7 +191,6 @@ class DagsterLogManager(logging.Logger):
     ):
 =======
     def __init__(self, logging_metadata: DagsterLoggingMetadata, loggers: List[logging.Logger]):
-        import sys
 
 >>>>>>> working python log capture
         self._logging_metadata = check.inst_param(
@@ -206,7 +205,6 @@ class DagsterLogManager(logging.Logger):
         )
 >>>>>>> working python log capture
         super().__init__(name="dagster", level=logging.DEBUG)
-        self.addHandler(logging.StreamHandler(sys.stdout))
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
         for handler in handlers:
