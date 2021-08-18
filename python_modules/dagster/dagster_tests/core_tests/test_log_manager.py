@@ -1,6 +1,6 @@
+import logging
 import sys
 import textwrap
-import logging
 
 from dagster import DagsterEvent
 from dagster.core.definitions.dependency import NodeHandle
