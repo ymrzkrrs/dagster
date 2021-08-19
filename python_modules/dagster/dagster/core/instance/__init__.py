@@ -1140,6 +1140,11 @@ records = instance.get_event_records(
     def get_handlers(self):
         return self._handlers
 
+    def get_event_log_handler(self):
+        event_log_handler = _EventListenerLogHandler(self)
+        event_log_handler.setLevel(10)
+        return event_log_handler
+
     def handle_new_event(self, event):
         run_id = event.run_id
 
