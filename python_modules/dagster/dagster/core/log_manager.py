@@ -230,21 +230,21 @@ class DagsterLogManager(logging.Logger):
         logging_metadata: DagsterLoggingMetadata,
         loggers: List[logging.Logger],
         handlers: Optional[List[logging.Handler]] = None,
+        managed_logs: List[str] = None,
     ):
         self._logging_metadata = check.inst_param(
             logging_metadata, "logging_metadata", DagsterLoggingMetadata
         )
         self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
+        self._managed_logs = check.opt_list_param(managed_logs, "managed_logs", of_type=str)
+        super().__init__(name="dagster", level=logging.DEBUG)
+
+        self.handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
         self._dagster_log_conversion_handler = DagsterLogHandler(
             logging_metadata=logging_metadata,
             loggers=loggers,
-            handlers=handlers,
+            handlers=self.handlers,
         )
-        super().__init__(name="dagster", level=logging.DEBUG)
-
-        handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
-        for handler in handlers:
-            self.addHandler(handler)
 
     @property
     def logging_metadata(self) -> DagsterLoggingMetadata:
@@ -255,13 +255,12 @@ class DagsterLogManager(logging.Logger):
         return self._loggers
 
     def begin_python_log_capture(self):
-        # for now, automatically (and only) attach to root logger
-        root_logger = logging.getLogger()
-        root_logger.addHandler(self._dagster_log_conversion_handler)
+        for log in self._managed_logs:
+            log.addHandler(self._dagster_log_conversion_handler)
 
     def end_python_log_capture(self):
-        root_logger = logging.getLogger()
-        root_logger.removeHandler(self._dagster_log_conversion_handler)
+        for log in self._managed_logs:
+            log.removeHandler(self._dagster_log_conversion_handler)
 
     def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
