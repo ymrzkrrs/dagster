@@ -204,7 +204,7 @@ class InstanceRef(
             defaults["run_launcher"],
         )
 
-        settings_keys = {"telemetry"}
+        settings_keys = {"telemetry", "python_logs"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
         return InstanceRef(

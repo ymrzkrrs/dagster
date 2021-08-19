@@ -240,7 +240,7 @@ class DagsterLogManager(logging.Logger):
         super().__init__(name="dagster", level=logging.DEBUG)
 
         self.handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
-        self._dagster_log_conversion_handler = DagsterLogHandler(
+        self._dagster_log_handler = DagsterLogHandler(
             logging_metadata=logging_metadata,
             loggers=loggers,
             handlers=self.handlers,
@@ -255,12 +255,14 @@ class DagsterLogManager(logging.Logger):
         return self._loggers
 
     def begin_python_log_capture(self):
-        for log in self._managed_logs:
-            log.addHandler(self._dagster_log_conversion_handler)
+        for log_name in self._managed_logs:
+            log_ = logging.getLogger(log_name) if log_name != "root" else logging.getLogger()
+            log_.addHandler(self._dagster_log_handler)
 
     def end_python_log_capture(self):
-        for log in self._managed_logs:
-            log.removeHandler(self._dagster_log_conversion_handler)
+        for log_name in self._managed_logs:
+            log_ = logging.getLogger(log_name) if log_name != "root" else logging.getLogger()
+            log_.removeHandler(self._dagster_log_handler)
 
     def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
@@ -326,4 +328,5 @@ class DagsterLogManager(logging.Logger):
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
             handlers=self.handlers,
+            managed_logs=self._managed_logs,
         )

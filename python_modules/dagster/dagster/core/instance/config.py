@@ -80,6 +80,10 @@ def configurable_class_schema():
     return {"module": str, "class": str, "config": Field(Permissive())}
 
 
+def python_log_config_schema():
+    return {"managed_python_logs": Array(str), "python_log_level": Field(str, default_value="INFO")}
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -92,4 +96,5 @@ def dagster_instance_config_schema():
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
+        "python_logs": Field(python_log_config_schema(), is_required=False),
     }

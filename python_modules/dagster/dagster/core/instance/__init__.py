@@ -552,13 +552,13 @@ class DagsterInstance:
 
     @property
     def managed_python_logs(self) -> List[str]:
-        python_log_settings = self.get_settings("python_log_settings")
+        python_log_settings = self.get_settings("python_logs")
         return python_log_settings.get("managed_python_logs", [])
 
     @property
     def python_log_level(self) -> List[str]:
-        python_log_settings = self.get_settings("python_log_settings")
-        return python_log_settings.get("python_log_level", "INFO")
+        python_log_settings = self.get_settings("python_logs")
+        return python_log_settings.get("python_log_level")
 
     def upgrade(self, print_fn=None):
         from dagster.core.storage.migration.utils import upgrading_instance

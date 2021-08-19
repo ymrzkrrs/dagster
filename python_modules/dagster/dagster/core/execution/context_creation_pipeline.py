@@ -586,6 +586,7 @@ def create_log_manager(context_creation_data: ContextCreationData) -> DagsterLog
         logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
         handlers=handlers,
+        managed_logs=context_creation_data.instance.managed_python_logs,
     )
 
 
@@ -618,7 +619,12 @@ def _create_context_free_log_manager(
 
     handlers = [instance.get_event_log_handler()]
 
-    return DagsterLogManager(get_logging_metadata(pipeline_run), loggers, handlers)
+    return DagsterLogManager(
+        logging_metadata=get_logging_metadata(pipeline_run),
+        loggers=loggers,
+        handlers=handlers,
+        managed_logs=instance.managed_python_logs,
+    )
 
 
 def get_logging_metadata(pipeline_run: PipelineRun) -> DagsterLoggingMetadata:

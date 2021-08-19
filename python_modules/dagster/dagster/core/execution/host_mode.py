@@ -106,6 +106,7 @@ def host_mode_execution_context_event_generator(
         logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
         handlers=handlers,
+        managed_logs=instance.managed_python_logs,
     )
 
     try:
