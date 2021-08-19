@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
@@ -164,10 +164,9 @@ def get_dagster_meta_dict(
     return meta_dict
 
 
-class DagsterLogConversionHandler(logging.Handler):
+class DagsterLogHandler(logging.Handler):
     def __init__(
         self,
-        level: int,
         logging_metadata: DagsterLoggingMetadata,
         loggers: List[logging.Logger],
         handlers: List[logging.Handler],
@@ -175,18 +174,19 @@ class DagsterLogConversionHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
-        super().__init__(level=level)
+        super().__init__()
 
     def _extract_extra(self, record: logging.LogRecord) -> Dict[str, Any]:
-        # In the logging.Logger log() implementation, the elements of the `extra` dictionary
-        # argument are smashed into the __dict__ of the underlying logging.LogRecord.
-        # This function figures out what the original `extra` values of the log call were by
-        # comparing the set of attributes in the received record to those of a default record.
+        """In the logging.Logger log() implementation, the elements of the `extra` dictionary
+        argument are smashed into the __dict__ of the underlying logging.LogRecord.
+        This function figures out what the original `extra` values of the log call were by
+        comparing the set of attributes in the received record to those of a default record.
+        """
         ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + ["message", "asctime"]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
     def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
-        # Take a normal LogRecord and add metadata to make it a Dagster LogRecord
+        # take a normal LogRecord and add metadata to make it a Dagster LogRecord
         dagster_message_props = DagsterMessageProps(orig_message=record.msg)
 
         # add in dagster meta info to the record
@@ -202,6 +202,7 @@ class DagsterLogConversionHandler(logging.Handler):
         return record
 
     def emit(self, record: logging.LogRecord):
+        """For any recieved record, add Dagster metadata, and have handlers handle it"""
         # avoid processing records that already have dagster meta
         if getattr(record, DAGSTER_META_KEY, None) is not None:
             return
@@ -224,33 +225,21 @@ class DagsterLogConversionHandler(logging.Handler):
 
 
 class DagsterLogManager(logging.Logger):
-<<<<<<< HEAD
     def __init__(
         self,
         logging_metadata: DagsterLoggingMetadata,
         loggers: List[logging.Logger],
         handlers: Optional[List[logging.Handler]] = None,
     ):
-=======
-    def __init__(self, logging_metadata: DagsterLoggingMetadata, loggers: List[logging.Logger]):
-
->>>>>>> working python log capture
         self._logging_metadata = check.inst_param(
             logging_metadata, "logging_metadata", DagsterLoggingMetadata
         )
         self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
-        self._python_capture_handler = PythonLogCaptureHandler(
-            level=logging.CRITICAL, log_manager=self
-=======
-        self._dagster_log_conversion_handler = DagsterLogConversionHandler(
-            level=logging.CRITICAL, logging_metadata=logging_metadata, loggers=loggers, handlers=[]
->>>>>>> refactor/rename DagsterLogConversionHandler
+        self._dagster_log_conversion_handler = DagsterLogHandler(
+            logging_metadata=logging_metadata,
+            loggers=loggers,
+            handlers=handlers,
         )
->>>>>>> working python log capture
         super().__init__(name="dagster", level=logging.DEBUG)
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
@@ -274,10 +263,28 @@ class DagsterLogManager(logging.Logger):
         root_logger = logging.getLogger()
         root_logger.removeHandler(self._dagster_log_conversion_handler)
 
-    def log_dagster_event(self, level: int, msg: str, dagster_event: "DagsterEvent"):
+    def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
+        """Log a DagsterEvent at the given level. Attributes about the context it was logged in
+        (such as the solid name or pipeline name) will be automatically attached to the created record.
+
+        Args:
+            level (str, int): either a string representing the desired log level ("INFO", "WARN"),
+                or an integer level such as logging.INFO or logging.DEBUG.
+            msg (str): message describing the event
+            dagster_event (DagsterEvent): DagsterEvent that will be logged
+        """
         self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
 
     def log(self, level, msg, *args, **kwargs):
+        """Log a message at the given level. Attributes about the context it was logged in (such as
+        the solid name or pipeline name) will be automatically attached to the created record.
+
+        Args:
+            level (str, int): either a string representing the desired log level ("INFO", "WARN"),
+                or an integer level such as logging.INFO or logging.DEBUG.
+            msg (str): the message to be logged
+            *args: the logged message will be msg % args
+        """
         # allow for string level names
         super().log(coerce_valid_log_level(level), msg, *args, **kwargs)
 
@@ -310,7 +317,7 @@ class DagsterLogManager(logging.Logger):
         return a new DagsterLogManager with the merged set of tags.
 
         Args:
-            tags (Dict[str,str]): Dictionary of tags
+            new_tags (Dict[str,str]): Dictionary of tags
 
         Returns:
             DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
