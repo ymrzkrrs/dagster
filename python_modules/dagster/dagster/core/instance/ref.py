@@ -205,7 +205,7 @@ class InstanceRef(
         )
 
         settings_keys = {"telemetry", "python_logs"}
-        settings = {key: config_value.get(key) for key in settings_keys}
+        settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
