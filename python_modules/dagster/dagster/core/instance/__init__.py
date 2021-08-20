@@ -1111,27 +1111,28 @@ records = instance.get_event_records(
     def _get_yaml_python_handlers(self):
         handlers = []
 
-        if self._settings and "python_logs" in self._settings:
-            if "handlers" in self._settings["python_logs"]:
-                # not sure what configuration settings we'll have in python_logs.
-                # we only want to feed in handlers to logging.config.DictConfigurator
-                payload = {"handlers": dict(self._settings["python_logs"]["handlers"])}
-                dict_configurator = logging.config.DictConfigurator(payload)
+        try:
+            # not sure what configuration settings we'll have in python_logs.
+            # we only want to feed in handlers to logging.config.DictConfigurator
+            payload = {"handlers": dict(self._settings["python_logs"]["handlers"])}
+            dict_configurator = logging.config.DictConfigurator(payload)
 
-                # dict_configurator.config.get from the python logging module converts
-                # strings to their expected types
-                formatted_handlers_attr = dict_configurator.config.get("handlers", {})
-                for name in sorted(formatted_handlers_attr):
+            # dict_configurator.config.get from the python logging module converts
+            # strings to their expected types
+            formatted_handlers_attr = dict_configurator.config.get("handlers", {})
+            for name in sorted(formatted_handlers_attr):
+                handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
 
-                    handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
+                # initialize dummy format so we can see logs
+                formatter = logging.Formatter(
+                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                )
 
-                    # initialize dummy format so we can see logs
-                    formatter = logging.Formatter(
-                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                    )
-                    handler.setFormatter(formatter)
+                handler.setFormatter(formatter)
+                handlers.append(handler)
 
-                    handlers.append(handler)
+        except KeyError:
+            pass
 
         return handlers
 
