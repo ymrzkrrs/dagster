@@ -372,88 +372,40 @@ def test_io_context_logging(capsys):
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
 
 
-def test_conf_file_logging():
-    with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
-                template = template_fd.read().format()
-                target_fd.write(template)
-
-        instance = DagsterInstance.from_config(tempdir)
-
-        @solid
-        def log_solid(context):
-            context.log.info("Hello world!")
-
-        @pipeline
-        def log_pipeline():
-            log_solid()
-
-        # Python 3.4+
-        f = io.StringIO()
-        with redirect_stdout(f):
-            execute_pipeline(log_pipeline, instance=instance)
-        out = f.getvalue()
-
-        # test to check configuration of handler and formatter
-        # following format in test_logging.conf
-        assert re.search(r"loggerOne :: .+ Hello world!", out)
-
-
-def test_conf_file_logging_with_custom_logger():
-    with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
-                template = template_fd.read().format()
-                target_fd.write(template)
-
-        instance = DagsterInstance.from_config(tempdir)
-
-        @logger(
-            {
-                "log_level": Field(str, is_required=False, default_value="DEBUG"),
-                "name": Field(str, is_required=False, default_value="customLogger"),
+def test_conf_file_logging(capsys):
+    config_settings = {
+        "python_logs": {
+            "handlers": {
+                "handlerOne": {
+                    "class": "logging.StreamHandler",
+                    "level": "INFO",
+                    "stream": "ext://sys.stdout",
+                },
+                "handlerTwo": {
+                    "class": "logging.StreamHandler",
+                    "level": "ERROR",
+                    "stream": "ext://sys.stdout",
+                },
             },
-            description="A JSON-formatted console logger",
-        )
-        def custom_console_logger(init_context):
-            level = init_context.logger_config["log_level"]
-            name = init_context.logger_config["name"]
+        }
+    }
 
-            klass = logging.getLoggerClass()
-            logger_ = klass(name, level=level)
+    instance = DagsterInstance.local_temp(overrides=config_settings)
 
-            handler = logging.StreamHandler(sys.stdout)
+    @solid
+    def log_solid(context):
+        context.log.info("Hello world")
+        context.log.error("My test error")
 
-            class CustomFormatter(logging.Formatter):
-                def format(self, record):
-                    return "CustomFormatter :: " + str(record)
+    @pipeline
+    def log_pipeline():
+        log_solid()
 
-            handler.setFormatter(CustomFormatter())
-            logger_.addHandler(handler)
+    execute_pipeline(log_pipeline, instance=instance)
 
-            return logger_
+    out, _ = capsys.readouterr()
 
-        @solid
-        def log_solid(context):
-            context.log.info("Hello world!")
-
-        @pipeline(
-            mode_defs=[ModeDefinition(logger_defs={"my_custom_logger": custom_console_logger})]
-        )
-        def log_pipeline():
-            log_solid()
-
-        # Python 3.4+
-        f = io.StringIO()
-        with redirect_stdout(f):
-            execute_pipeline(
-                log_pipeline,
-                instance=instance,
-                run_config={"loggers": {"my_custom_logger": {"config": {"log_level": "DEBUG"}}}},
-            )
-        out = f.getvalue()
-
-        # defined in ./test_logging.conf
-        assert re.search(r"loggerOne :: .+ Hello world!", out)
-        assert re.search(r"CustomFormatter :: .* Hello world!", out)
+    # currently the format of dict-inputted handlers is undetermined, so
+    # we only check for the expected message
+    assert re.search(r"Hello world", out)
+    assert len(re.findall(r"My test error", out)) == 2

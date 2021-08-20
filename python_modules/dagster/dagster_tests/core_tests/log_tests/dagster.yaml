@@ -1,5 +1,4 @@
-dagster_python_log_config:
-  version: 1
+python_logs:
   handlers:
     handlerOne:
       class: logging.StreamHandler

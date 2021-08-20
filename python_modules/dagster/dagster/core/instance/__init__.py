@@ -239,7 +239,6 @@ class DagsterInstance:
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
-        dagster_python_log_config: Optional[Dict[str, Any]] = None,
         ref: Optional[InstanceRef] = None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -308,12 +307,6 @@ class DagsterInstance:
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
-
-        self._dagster_python_log_config = check.opt_dict_param(
-            dagster_python_log_config, "dagster_python_log_config"
-        )
-
-        self._handlers = self._get_yaml_python_handlers()
 
     # ctors
 
@@ -414,7 +407,6 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
-            dagster_python_log_config=instance_ref.dagster_python_log_config,
             ref=instance_ref,
             **kwargs,
         )
@@ -1119,31 +1111,37 @@ records = instance.get_event_records(
 
     def _get_yaml_python_handlers(self):
         handlers = []
-        if self._dagster_python_log_config:
-            dict_configurator = logging.config.DictConfigurator({})
-            for _, handler_attr in self._dagster_python_log_config.get("handlers", {}).items():
-                handler = dict_configurator.configure_handler(handler_attr)
-                handlers.append(handler)
+
+        if self._settings and "python_logs" in self._settings:
+            if "handlers" in self._settings["python_logs"]:
+                # not sure what configuration settings we'll have in python_logs.
+                # we only want to feed in handlers to logging.config.DictConfigurator
+                payload = {"handlers": dict(self._settings["python_logs"]["handlers"])}
+                dict_configurator = logging.config.DictConfigurator(payload)
+                formatted_handlers_attr = dict_configurator.config.get("handlers", {})
+                for name in sorted(formatted_handlers_attr):
+
+                    handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
+
+                    # initialize dummy format so we can see logs
+                    formatter = logging.Formatter(
+                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                    )
+                    handler.setFormatter(formatter)
+
+                    handlers.append(handler)
 
         return handlers
 
-    def get_loggers(self):
-        loggers = []
-
-        event_logger = logging.Logger("__event_listener")
-        event_logger.addHandler(_EventListenerLogHandler(self))
-        event_logger.setLevel(10)
-        loggers.append(event_logger)
-
-        return loggers
-
-    def get_handlers(self):
-        return self._handlers
-
-    def get_event_log_handler(self):
+    def _get_event_log_handler(self):
         event_log_handler = _EventListenerLogHandler(self)
         event_log_handler.setLevel(10)
         return event_log_handler
+
+    def get_handlers(self):
+        handlers = [self._get_event_log_handler()]  # comment out for testing purposes
+        handlers.extend(self._get_yaml_python_handlers())
+        return handlers
 
     def handle_new_event(self, event):
         run_id = event.run_id
