@@ -1117,7 +1117,9 @@ records = instance.get_event_records(
             if handlers_dict:
                 # not sure what configuration settings we'll have in python_logs.
                 # we only want to feed in handlers to logging.config.DictConfigurator
-                payload = {"handlers": dict(handlers_dict)} # DictConfigurator mutates objects, so we make a copy here
+                payload = {
+                    "handlers": dict(handlers_dict)
+                }  # DictConfigurator mutates objects, so we make a copy here
                 dict_configurator = logging.config.DictConfigurator(payload)
 
                 # dict_configurator.config.get from the python logging module converts
@@ -1128,7 +1130,7 @@ records = instance.get_event_records(
 
                     # initialize dummy format so we can see logs
                     formatter = logging.Formatter(
-                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                     )
 
                     handler.setFormatter(formatter)
