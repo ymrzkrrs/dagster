@@ -1,11 +1,11 @@
 import logging
 
 import pytest
-from dagster import DagsterInstance, ModeDefinition, execute_pipeline, pipeline, resource, solid
+from dagster import ModeDefinition, execute_pipeline, pipeline, reconstructable, resource, solid
 from dagster.core.test_utils import instance_for_test
 
 
-def get_log_records(pipe, managed_loggers=None, python_logging_level=None):
+def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
     python_logs_overrides = {}
     if managed_loggers is not None:
         python_logs_overrides["managed_python_loggers"] = managed_loggers
@@ -214,3 +214,47 @@ def test_logging_capture_level_defined_inside(log_level, expected_msgs):
     ]
 
     assert len(log_event_records) == expected_msgs
+
+
+def define_logging_pipeline():
+    loggerA = logging.getLogger("loggerA")
+
+    @solid
+    def solidA():
+        loggerA.debug("loggerA")
+        loggerA.info("loggerA")
+        return 1
+
+    @solid
+    def solidB(_in):
+        loggerB = logging.getLogger("loggerB")
+        loggerB.debug("loggerB")
+        loggerB.info("loggerB")
+        loggerA.debug("loggerA")
+        loggerA.info("loggerA")
+
+    @pipeline
+    def pipe():
+        solidB(solidA())
+
+    return pipe
+
+
+@pytest.mark.parametrize("managed_loggers", [["root"], ["loggerA", "loggerB"]])
+def test_multiprocess_logging(managed_loggers):
+
+    log_records = get_log_records(
+        reconstructable(define_logging_pipeline),
+        managed_loggers=managed_loggers,
+        python_logging_level="INFO",
+        run_config={
+            "intermediate_storage": {"filesystem": {}},
+            "execution": {"multiprocess": {}},
+        },
+    )
+
+    logA_records = [lr for lr in log_records if lr.user_message == "loggerA"]
+    logB_records = [lr for lr in log_records if lr.user_message == "loggerB"]
+
+    assert len(logA_records) == 2
+    assert len(logB_records) == 1

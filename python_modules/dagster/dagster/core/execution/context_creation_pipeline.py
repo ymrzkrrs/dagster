@@ -14,7 +14,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,

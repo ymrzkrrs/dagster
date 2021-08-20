@@ -208,9 +208,6 @@ class DagsterLogHandler(logging.Handler):
             return
         dagster_record = self._convert_record(record)
         # built-in handlers
-        print("-----------")
-        print("RECORD")
-        print(record)
         for handler in self._handlers:
             handler.handle(dagster_record)
         # user-defined loggers
