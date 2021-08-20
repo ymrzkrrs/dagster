@@ -1111,28 +1111,28 @@ records = instance.get_event_records(
     def _get_yaml_python_handlers(self):
         handlers = []
 
-        try:
-            # not sure what configuration settings we'll have in python_logs.
-            # we only want to feed in handlers to logging.config.DictConfigurator
-            payload = {"handlers": dict(self._settings["python_logs"]["handlers"])}
-            dict_configurator = logging.config.DictConfigurator(payload)
+        if self._settings:
+            handlers_dict = self._settings.get("python_logs", {}).get("handlers", {})
 
-            # dict_configurator.config.get from the python logging module converts
-            # strings to their expected types
-            formatted_handlers_attr = dict_configurator.config.get("handlers", {})
-            for name in sorted(formatted_handlers_attr):
-                handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
+            if handlers_dict:
+                # not sure what configuration settings we'll have in python_logs.
+                # we only want to feed in handlers to logging.config.DictConfigurator
+                payload = {"handlers": dict(handlers_dict)} # DictConfigurator mutates objects, so we make a copy here
+                dict_configurator = logging.config.DictConfigurator(payload)
 
-                # initialize dummy format so we can see logs
-                formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                )
+                # dict_configurator.config.get from the python logging module converts
+                # strings to their expected types
+                formatted_handlers_attr = dict_configurator.config.get("handlers", {})
+                for name in sorted(formatted_handlers_attr):
+                    handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
 
-                handler.setFormatter(formatter)
-                handlers.append(handler)
+                    # initialize dummy format so we can see logs
+                    formatter = logging.Formatter(
+                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                    )
 
-        except KeyError:
-            pass
+                    handler.setFormatter(formatter)
+                    handlers.append(handler)
 
         return handlers
 
