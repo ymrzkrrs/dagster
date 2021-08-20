@@ -1,4 +1,3 @@
-import configparser
 import inspect
 import logging
 import logging.config
@@ -1118,6 +1117,9 @@ records = instance.get_event_records(
                 # we only want to feed in handlers to logging.config.DictConfigurator
                 payload = {"handlers": dict(self._settings["python_logs"]["handlers"])}
                 dict_configurator = logging.config.DictConfigurator(payload)
+
+                # dict_configurator.config.get from the python logging module converts
+                # strings to their expected types
                 formatted_handlers_attr = dict_configurator.config.get("handlers", {})
                 for name in sorted(formatted_handlers_attr):
 
@@ -1139,7 +1141,7 @@ records = instance.get_event_records(
         return event_log_handler
 
     def get_handlers(self):
-        handlers = [self._get_event_log_handler()]  # comment out for testing purposes
+        handlers = [self._get_event_log_handler()]
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 

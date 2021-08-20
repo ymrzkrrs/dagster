@@ -1,20 +1,16 @@
 import io
 import json
 import logging
-import os
 import re
 import sys
-import tempfile
 from contextlib import contextmanager, redirect_stdout
 
 import pytest
 from dagster import (
-    Field,
     ModeDefinition,
     check,
     execute_pipeline,
     execute_solid,
-    logger,
     pipeline,
     resource,
     solid,
@@ -27,7 +23,6 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.loggers import colored_console_logger, json_console_logger
-from dagster.utils import file_relative_path
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
