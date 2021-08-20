@@ -81,7 +81,10 @@ def configurable_class_schema():
 
 
 def python_log_config_schema():
-    return {"managed_python_logs": Array(str), "python_log_level": Field(str, default_value="INFO")}
+    return {
+        "managed_python_loggers": Field(Array(str), is_required=False),
+        "python_log_level": Field(str, is_required=False),
+    }
 
 
 def dagster_instance_config_schema():

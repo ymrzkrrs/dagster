@@ -1,23 +1,24 @@
 import logging
+
 import pytest
-
-from dagster import (
-    DagsterInstance,
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import DagsterInstance, ModeDefinition, execute_pipeline, pipeline, resource, solid
+from dagster.core.test_utils import instance_for_test
 
 
-def get_log_records(pipe, managed_logs):
-    instance = DagsterInstance.local_temp(
-        overrides={"python_logs": {"managed_python_logs": managed_logs}}
-    )
-    result = execute_pipeline(pipe, instance=instance)
+def get_log_records(pipe, managed_loggers=None, python_logging_level=None):
+    python_logs_overrides = {}
+    if managed_loggers is not None:
+        python_logs_overrides["managed_python_loggers"] = managed_loggers
+    if python_logging_level is not None:
+        python_logs_overrides["python_log_level"] = python_logging_level
 
-    event_records = instance.event_log_storage.get_logs_for_run(result.run_id)
+    overrides = {}
+    if python_logs_overrides:
+        overrides["python_logs"] = python_logs_overrides
+
+    with instance_for_test(overrides=overrides) as instance:
+        result = execute_pipeline(pipe, instance=instance)
+        event_records = instance.event_log_storage.get_logs_for_run(result.run_id)
     return [er for er in event_records if er.user_message]
 
 
@@ -137,3 +138,79 @@ def test_logging_capture_resource(managed_logs, expect_output):
         assert log_event_record.level == logging.INFO
     else:
         assert len(log_event_records) == 0
+
+
+@pytest.mark.parametrize(
+    "log_level,expected_msgs",
+    [
+        (None, 3),  # default python log level is WARNING
+        ("DEBUG", 5),
+        ("INFO", 4),
+        ("WARNING", 3),
+        ("ERROR", 2),
+        ("CRITICAL", 1),
+    ],
+)
+def test_logging_capture_level_defined_outside(log_level, expected_msgs):
+    logger = logging.getLogger("python_logger_outside")
+
+    @solid
+    def my_solid():
+        for level in [
+            logging.DEBUG,
+            logging.INFO,
+            logging.WARNING,
+            logging.ERROR,
+            logging.CRITICAL,
+        ]:
+            logger.log(level=level, msg="logger_foobarbaz")
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+
+    records = get_log_records(
+        my_pipeline, managed_loggers=["python_logger_outside"], python_logging_level=log_level
+    )
+    python_logger_records = [r for r in records if r.user_message == "logger_foobarbaz"]
+
+    assert len(python_logger_records) == expected_msgs
+
+
+@pytest.mark.parametrize(
+    "log_level,expected_msgs",
+    [
+        (None, 3),  # default python log level is WARNING
+        ("DEBUG", 5),
+        ("INFO", 4),
+        ("WARNING", 3),
+        ("ERROR", 2),
+        ("CRITICAL", 1),
+    ],
+)
+def test_logging_capture_level_defined_inside(log_level, expected_msgs):
+    @solid
+    def my_solid():
+        logger = logging.getLogger("python_logger_inside")
+        for level in [
+            logging.DEBUG,
+            logging.INFO,
+            logging.WARNING,
+            logging.ERROR,
+            logging.CRITICAL,
+        ]:
+            logger.log(level=level, msg="foobarbaz")
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+
+    log_event_records = [
+        lr
+        for lr in get_log_records(
+            my_pipeline, managed_loggers=["root"], python_logging_level=log_level
+        )
+        if lr.user_message == "foobarbaz"
+    ]
+
+    assert len(log_event_records) == expected_msgs

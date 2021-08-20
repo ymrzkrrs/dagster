@@ -2,6 +2,7 @@ import logging
 import sys
 import textwrap
 
+import pytest
 from dagster import DagsterEvent
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
@@ -161,11 +162,12 @@ def test_construct_log_string_with_error_raise_from():
     assert expected_substr in log_string
 
 
-def test_user_code_error_boundary_python_capture():
+@pytest.mark.parametrize("use_handler", [True, False])
+def test_user_code_error_boundary_python_capture(use_handler):
     class TestHandler(logging.Handler):
         def __init__(self):
             self.captured = []
-            super().__init__(logging.INFO)
+            super().__init__()
 
         def emit(self, record):
             self.captured.append(record)
@@ -183,13 +185,15 @@ def test_user_code_error_boundary_python_capture():
             logging_metadata=DagsterLoggingMetadata(
                 run_id="123456", pipeline_name="pipeline", step_key="some_step"
             ),
-            loggers=[user_logger],
+            loggers=[user_logger] if not use_handler else [],
+            handlers=[capture_handler] if use_handler else [],
+            managed_loggers=[logging.getLogger("python_log")],
         ),
     ):
         python_log = logging.getLogger("python_log")
         python_log.setLevel(logging.INFO)
 
-        python_log.info("info")
+        python_log.debug("debug")
         python_log.critical("critical msg", extra=test_extra)
 
     assert len(capture_handler.captured) == 1

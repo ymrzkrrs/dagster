@@ -551,13 +551,13 @@ class DagsterInstance:
     # python logs
 
     @property
-    def managed_python_logs(self) -> List[str]:
-        python_log_settings = self.get_settings("python_logs")
-        return python_log_settings.get("managed_python_logs", [])
+    def managed_python_loggers(self) -> List[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
+        return python_log_settings.get("managed_python_loggers", [])
 
     @property
-    def python_log_level(self) -> List[str]:
-        python_log_settings = self.get_settings("python_logs")
+    def python_log_level(self) -> Optional[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
         return python_log_settings.get("python_log_level")
 
     def upgrade(self, print_fn=None):

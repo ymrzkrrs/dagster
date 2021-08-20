@@ -1,9 +1,8 @@
-import io
 import json
 import logging
 import re
 import sys
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
@@ -23,6 +22,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
+from dagster.core.test_utils import instance_for_test
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"
@@ -364,3 +364,24 @@ def test_io_context_logging(capsys):
 
     assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+
+
+def test_python_log_level_context_logging():
+    @solid
+    def logged_solid(context):
+        context.log.error("some error")
+
+    @pipeline
+    def pipe():
+        logged_solid()
+
+    with instance_for_test() as instance:
+        result = execute_pipeline(pipe, instance=instance)
+        logs_default = instance.event_log_storage.get_logs_for_run(result.run_id)
+
+    with instance_for_test(overrides={"python_logs": {"python_log_level": "CRITICAL"}}) as instance:
+        result = execute_pipeline(pipe, instance=instance)
+        logs_critical = instance.event_log_storage.get_logs_for_run(result.run_id)
+
+    assert len(logs_critical) > 0  # DagsterEvents should still be logged
+    assert len(logs_default) == len(logs_critical) + 1

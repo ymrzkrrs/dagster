@@ -14,6 +14,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -41,7 +42,11 @@ from dagster.core.execution.resources_init import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.log_manager import (
+    DagsterLogManager,
+    DagsterLoggingMetadata,
+    coerce_valid_log_level,
+)
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -268,7 +273,7 @@ def execution_context_event_generator(
         instance,
     )
 
-    log_manager = create_log_manager(context_creation_data)
+    log_manager = create_log_manager_from_creation_data(context_creation_data)
     resource_defs = pipeline_def.get_required_resource_defs_for_mode(
         context_creation_data.resolved_run_config.mode
     )
@@ -359,7 +364,7 @@ def orchestration_context_event_generator(
         instance,
     )
 
-    log_manager = create_log_manager(context_creation_data)
+    log_manager = create_log_manager_from_creation_data(context_creation_data)
 
     try:
         executor = create_executor(context_creation_data)
@@ -538,7 +543,9 @@ def scoped_pipeline_context(
             pass
 
 
-def create_log_manager(context_creation_data: ContextCreationData) -> DagsterLogManager:
+def create_log_manager_from_creation_data(
+    context_creation_data: ContextCreationData,
+) -> DagsterLogManager:
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     pipeline_def, mode_def, resolved_run_config, pipeline_run = (
@@ -580,14 +587,7 @@ def create_log_manager(context_creation_data: ContextCreationData) -> DagsterLog
                 )
             )
 
-    handlers = [context_creation_data.instance.get_event_log_handler()]
-
-    return DagsterLogManager(
-        logging_metadata=get_logging_metadata(pipeline_run),
-        loggers=loggers,
-        handlers=handlers,
-        managed_logs=context_creation_data.instance.managed_python_logs,
-    )
+    return create_log_manager(context_creation_data.instance, pipeline_run, loggers)
 
 
 def _create_context_free_log_manager(
@@ -617,18 +617,36 @@ def _create_context_free_log_manager(
             )
         ]
 
-    handlers = [instance.get_event_log_handler()]
+    return create_log_manager(instance, pipeline_run, loggers)
+
+
+def create_log_manager(
+    instance: DagsterInstance, pipeline_run: PipelineRun, loggers: List[logging.Logger]
+) -> DagsterLogManager:
+
+    managed_loggers = [
+        logging.getLogger(lname) if lname != "root" else logging.getLogger()
+        for lname in instance.managed_python_loggers
+    ]
+    if instance.python_log_level is not None:
+        python_log_level = coerce_valid_log_level(instance.python_log_level)
+        # set all loggers to the declared logging level
+        for logger in managed_loggers:
+            logger.setLevel(python_log_level)
+    else:
+        python_log_level = logging.NOTSET
 
     return DagsterLogManager(
         logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
-        handlers=handlers,
-        managed_logs=instance.managed_python_logs,
+        handlers=[instance.get_event_log_handler()],
+        managed_loggers=managed_loggers,
+        level=python_log_level,
     )
 
 
 def get_logging_metadata(pipeline_run: PipelineRun) -> DagsterLoggingMetadata:
-    check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     return DagsterLoggingMetadata(
         run_id=pipeline_run.run_id,
         pipeline_name=pipeline_run.pipeline_name,

@@ -21,7 +21,6 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.loggers import default_system_loggers
 from dagster.utils import ensure_single_item
@@ -30,7 +29,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .api import ExecuteRunWithPlanIterable, pipeline_execution_iterator
 from .context.logger import InitLoggerContext
 from .context.system import PlanData, PlanOrchestrationContext
-from .context_creation_pipeline import PlanOrchestrationContextManager, get_logging_metadata
+from .context_creation_pipeline import PlanOrchestrationContextManager, create_log_manager
 
 
 def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance):
@@ -100,14 +99,7 @@ def host_mode_execution_context_event_generator(
             )
         )
 
-    handlers = [instance.get_event_log_handler()]
-
-    log_manager = DagsterLogManager(
-        logging_metadata=get_logging_metadata(pipeline_run),
-        loggers=loggers,
-        handlers=handlers,
-        managed_logs=instance.managed_python_logs,
-    )
+    log_manager = create_log_manager(instance, pipeline_run, loggers)
 
     try:
         executor = _get_host_mode_executor(pipeline, run_config, executor_defs, instance)
