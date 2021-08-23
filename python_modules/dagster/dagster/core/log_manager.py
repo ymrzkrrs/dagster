@@ -165,6 +165,17 @@ def get_dagster_meta_dict(
 
 
 class DagsterLogHandler(logging.Handler):
+    """Internal class used to handle logs that are not generated from within Dagster. It mirrors
+    the behavior of its corresponding DagsterLogManager, adding in Dagster-specific metadata to
+    each handled log record, and sending it to the same sinks (handlers and loggers) that the
+    DagsterLogManager uses.
+
+    Note: The `loggers` argument will be populated with the set of @loggers supplied to the current
+    pipeline run. These essentially work as handlers (they do not create their own log messages,
+    they simply re-log messages that are created from context.log.__() calls), which is why they are
+    referenced from within this handler class.
+    """
+
     def __init__(
         self,
         logging_metadata: DagsterLoggingMetadata,
@@ -202,7 +213,7 @@ class DagsterLogHandler(logging.Handler):
         return record
 
     def emit(self, record: logging.LogRecord):
-        """For any recieved record, add Dagster metadata, and have handlers handle it"""
+        """For any received record, add Dagster metadata, and have handlers handle it"""
         # avoid processing records that already have dagster meta
         if getattr(record, DAGSTER_META_KEY, None) is not None:
             return
