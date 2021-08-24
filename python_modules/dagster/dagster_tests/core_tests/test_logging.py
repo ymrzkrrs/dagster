@@ -1,8 +1,10 @@
 import io
 import json
 import logging
+import os
 import re
 import sys
+import tempfile
 from contextlib import contextmanager, redirect_stdout
 
 import pytest
@@ -22,8 +24,10 @@ from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.test_utils import instance_for_test
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
+from datetime import datetime
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"
@@ -197,16 +201,20 @@ def test_handler_in_log_manager_with_tags(capsys):
     assert len(re.findall(r"WARNING :: test_pipeline - 123 - test", out)) == 2
 
 
+class CaptureHandler(logging.Handler):
+    def __init__(self, output=None):
+        self.captured = []
+        self.output = output
+        super().__init__(logging.INFO)
+
+    def emit(self, record):
+        if self.output:
+            print(self.output + record.msg)
+        self.captured.append(record)
+
+
 def test_capture_handler_log_records():
-    class TestHandler(logging.Handler):
-        def __init__(self):
-            self.captured = []
-            super().__init__(logging.INFO)
-
-        def emit(self, record):
-            self.captured.append(record)
-
-    capture_handler = TestHandler()
+    capture_handler = CaptureHandler()
 
     dl = DagsterLogManager(
         logging_metadata=DagsterLoggingMetadata(
@@ -370,22 +378,23 @@ def test_io_context_logging(capsys):
 def test_conf_file_logging(capsys):
     config_settings = {
         "python_logs": {
-            "handlers": {
-                "handlerOne": {
-                    "class": "logging.StreamHandler",
-                    "level": "INFO",
-                    "stream": "ext://sys.stdout",
+            "dagster_handler_config": {
+                "version": 1,
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stdout",
+                    },
+                    "handlerTwo": {
+                        "class": "logging.StreamHandler",
+                        "level": "ERROR",
+                        "stream": "ext://sys.stdout",
+                    },
                 },
-                "handlerTwo": {
-                    "class": "logging.StreamHandler",
-                    "level": "ERROR",
-                    "stream": "ext://sys.stdout",
-                },
-            },
+            }
         }
     }
-
-    instance = DagsterInstance.local_temp(overrides=config_settings)
 
     @solid
     def log_solid(context):
@@ -396,7 +405,8 @@ def test_conf_file_logging(capsys):
     def log_pipeline():
         log_solid()
 
-    execute_pipeline(log_pipeline, instance=instance)
+    with instance_for_test(overrides=config_settings) as instance:
+        execute_pipeline(log_pipeline, instance=instance)
 
     out, _ = capsys.readouterr()
 
@@ -404,3 +414,36 @@ def test_conf_file_logging(capsys):
     # we only check for the expected message
     assert re.search(r"Hello world", out)
     assert len(re.findall(r"My test error", out)) == 2
+
+
+def test_custom_class_handler(capsys):
+    output_msg = "Record handled: "
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "version": 1,
+                "handlers": {
+                    "handlerOne": {
+                        "()": "dagster_tests.core_tests.test_logging.CaptureHandler",
+                        "level": "INFO",
+                        "output": output_msg,
+                    }
+                },
+            },
+        }
+    }
+
+    @solid
+    def log_solid(context):
+        context.log.info("Hello world")
+
+    @pipeline
+    def log_pipeline():
+        log_solid()
+
+    with instance_for_test(overrides=config_settings) as instance:
+        execute_pipeline(log_pipeline, instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    assert re.search(r".*Record handled: .*Hello world.*", out)
