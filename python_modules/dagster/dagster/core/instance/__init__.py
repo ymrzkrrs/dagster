@@ -1113,6 +1113,8 @@ records = instance.get_event_records(
             logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
 
             # raise exception here if loggers provided in logging_config
+            if "loggers" in logging_config:
+                raise Exception("Loggers should not be specified in the configuration file.")
 
             # Handlers can only be retrieved from dictConfig configuration if they are attached
             # to a logger. We add a dummy logger to the configuration that allows us to access user
@@ -1133,30 +1135,6 @@ records = instance.get_event_records(
             dummy_logger = logging.getLogger(dummy_logger_name)
             return dummy_logger.handlers
         return []
-
-        # handlers_dict = self.get_settings("python_logs").get("handlers", {})
-
-        # if handlers_dict:
-        #     # not sure what configuration settings we'll have in python_logs.
-        #     # we only want to feed in handlers to logging.config.DictConfigurator
-        #     payload = {
-        #         "handlers": dict(handlers_dict)
-        #     }  # DictConfigurator mutates objects, so we make a copy here
-        #     dict_configurator = logging.config.DictConfigurator(payload)
-
-        #     # dict_configurator.config.get from the python logging module converts
-        #     # strings to their expected types
-        #     formatted_handlers_attr = dict_configurator.config.get("handlers", {})
-        #     for name in sorted(formatted_handlers_attr):
-        #         handler = dict_configurator.configure_handler(formatted_handlers_attr[name])
-
-        #         # initialize dummy format so we can see logs
-        #         formatter = logging.Formatter(
-        #             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        #         )
-
-        #         handler.setFormatter(formatter)
-        #         handlers.append(handler)
 
     def _get_event_log_handler(self):
         event_log_handler = _EventListenerLogHandler(self)
